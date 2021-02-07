@@ -75,8 +75,10 @@ def context_embedding(x_in, c):
     x = layers.Conv2D(filters=c, kernel_size=(1,1), padding='same')(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-    x = tf.broadcast_to(x, tf.shape(x_in))
+    
     # broadcast
+    #x = tf.broadcast_to(x, tf.shape(x_in))
+    x = layers.UpSampling2D((16,32))(x)
     
     x = layers.Add()([x, x_in])
     x = layers.Conv2D(filters=c, kernel_size=(3,3), padding='same')(x)
@@ -113,7 +115,8 @@ def bilateral_guided_aggregation(detail, semantic, c):
     semantic = layers.Multiply()([semantic_a, detail_b])
     
     # this layer is not mentioned in the paper !?
-    semantic = layers.UpSampling2D((4,4))(semantic)
+    #semantic = layers.UpSampling2D((4,4))(semantic)
+    semantic = layers.UpSampling2D((4,4), interpolation='bilinear')(semantic)
     
     x = layers.Add()([detail, semantic])
     x = layers.Conv2D(filters=c, kernel_size=(3,3), padding='same')(x)
@@ -182,7 +185,7 @@ def bisenetv2_compiled(**kwargs):
     return model
 
 
-def bisenetv2_output_shape(num_classes, out_scale):
+def bisenetv2_output_shape(num_classes, scale):
     return ((INPUT_SHAPE[0] // 8) * scale, 
             (INPUT_SHAPE[1] // 8) * scale, 
             num_classes)

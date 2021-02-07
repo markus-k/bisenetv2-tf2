@@ -1,4 +1,7 @@
-model.tf/
+*.tf/
 logs/
+*.log
 model*.tflite
 .ipynb_checkpoints/
+
+__pycache__
