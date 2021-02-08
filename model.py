@@ -40,7 +40,7 @@ def stem(x_in, c):
     x = layers.BatchNormalization()(x)
     x_split = layers.Activation('relu')(x)
     
-    x = layers.Conv2D(filters=c / 2, kernel_size=(1,1), padding='same')(x_split)
+    x = layers.Conv2D(filters=c // 2, kernel_size=(1,1), padding='same')(x_split)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     
@@ -179,7 +179,7 @@ def bisenetv2(num_classes=2, out_scale=2, c_t=128):
 def bisenetv2_compiled(**kwargs):
     model = bisenetv2(**kwargs)
     model.compile(optimizers.SGD(momentum=0.9), 
-                  loss=losses.CategoricalCrossentropy(), 
+                  loss=losses.CategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
     
     return model
