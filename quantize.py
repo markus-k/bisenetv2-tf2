@@ -28,12 +28,12 @@ print(f'Input shape:  {INPUT_SHAPE}')
 print(f'Output shape: {OUTPUT_SHAPE}')
 
 cityscapes = tfds.load('cityscapes/semantic_segmentation')
-test_ds = cityscapes['test'].map(cityscapes_prep(OUTPUT_SHAPE, class_map_road, input_shape=INPUT_SHAPE))
+test_ds = cityscapes['test'].map(cityscapes_prep(OUTPUT_SHAPE, INPUT_SHAPE, class_map_road))
 
 def representative_dataset():
     for data in test_ds.take(50).batch(1):
         yield [data[0]]
-        
+
 
 converter = tf.lite.TFLiteConverter.from_saved_model(args.tf_model)
 converter.optimizations = [tf.lite.Optimize.DEFAULT]
@@ -48,3 +48,4 @@ with open(args.quant_model, 'wb') as fd:
     fd.write(tflite_quant_model)
 
 print('Model successfully converted.')
+print(f'Now run: edgetpu_compiler -s -a -m 13 {args.quant_model}')
