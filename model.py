@@ -138,6 +138,11 @@ def seg_head(x_in, c_t, s, n):
     return x
 
 
+class ArgmaxMeanIOU(metrics.MeanIoU):
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        return super().update_state(tf.argmax(y_true, axis=-1), tf.argmax(y_pred, axis=-1), sample_weight)
+
+
 def bisenetv2(num_classes=2, out_scale=2, input_shape=INPUT_SHAPE, l=4, c_t=128):
     x_in = layers.Input(input_shape)
 
@@ -198,7 +203,7 @@ def bisenetv2_compiled(num_classes, **kwargs):
 
     model.compile(optimizers.SGD(momentum=0.9), 
                   loss=losses.CategoricalCrossentropy(from_logits=True),
-                  metrics=['accuracy']) #metrics.MeanIoU(num_classes)
+                  metrics=['accuracy', ArgmaxMeanIOU(num_classes)]) 
     
     return model
 
