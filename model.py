@@ -1,11 +1,13 @@
 import tensorflow as tf
 
 import tensorflow.keras.layers as layers
-import tensorflow.keras.models as models
 import tensorflow.keras.losses as losses
+import tensorflow.keras.metrics as metrics
+import tensorflow.keras.models as models
 import tensorflow.keras.optimizers as optimizers
 
 
+# default input shape
 INPUT_SHAPE = (512, 1024, 3)
 
 
@@ -78,7 +80,7 @@ def context_embedding(x_in, c):
     
     # broadcast
     #x = tf.broadcast_to(x, tf.shape(x_in))
-    x = layers.UpSampling2D((16,32))(x)
+    x = layers.UpSampling2D(x_in.shape[1:3])(x) # (16,32)
     
     x = layers.Add()([x, x_in])
     x = layers.Conv2D(filters=c, kernel_size=(3,3), padding='same')(x)
@@ -136,17 +138,22 @@ def seg_head(x_in, c_t, s, n):
     return x
 
 
-def bisenetv2(num_classes=2, out_scale=2, c_t=128):
-    x_in = layers.Input(INPUT_SHAPE)
+def bisenetv2(num_classes=2, out_scale=2, input_shape=INPUT_SHAPE, l=4, c_t=128):
+    x_in = layers.Input(input_shape)
 
     # semantic branch
-    x = stem(x_in, 16)
-    x = ge_layer(x, 32, stride=2)
-    x = ge_layer(x, 32, stride=1)
+    # S1 + S2
+    x = stem(x_in, 64 // l)
+    
+    # S3
+    x = ge_layer(x, 128 // l, stride=2)
+    x = ge_layer(x, 128 // l, stride=1)
 
+    # S4
     x = ge_layer(x, 64, stride=2)
     x = ge_layer(x, 64, stride=1)
 
+    # S5
     x = ge_layer(x, 128, stride=2)
 
     x = ge_layer(x, 128, stride=1)
@@ -156,13 +163,16 @@ def bisenetv2(num_classes=2, out_scale=2, c_t=128):
     x = context_embedding(x, 128)
 
     # detail branch
+    # S1
     y = detail_conv2d(x_in, 64, stride=2)
     y = detail_conv2d(y, 64, stride=1)
 
+    # S2
     y = detail_conv2d(y, 64, stride=2)
     y = detail_conv2d(y, 64, stride=1)
     y = detail_conv2d(y, 64, stride=1)
 
+    # S3
     y = detail_conv2d(y, 128, stride=2)
     y = detail_conv2d(y, 128, stride=1)
     y = detail_conv2d(y, 128, stride=1)
@@ -172,20 +182,28 @@ def bisenetv2(num_classes=2, out_scale=2, c_t=128):
     x = seg_head(x, c_t, out_scale, num_classes)
     
     model = models.Model(inputs=[x_in], outputs=[x])
+    
+    # set weight initializers
+    for layer in model.layers:
+        if hasattr(layer, 'kernel_initializer'):
+            layer.kernel_initializer = tf.keras.initializers.HeNormal()
+        if hasattr(layer, 'depthwise_initializer'):
+            layer.depthwise_initializer = tf.keras.initializers.HeNormal()
 
     return model
 
 
-def bisenetv2_compiled(**kwargs):
-    model = bisenetv2(**kwargs)
+def bisenetv2_compiled(num_classes, **kwargs):
+    model = bisenetv2(num_classes, **kwargs)
+
     model.compile(optimizers.SGD(momentum=0.9), 
                   loss=losses.CategoricalCrossentropy(from_logits=True),
-                  metrics=['accuracy'])
+                  metrics=['accuracy']) #metrics.MeanIoU(num_classes)
     
     return model
 
 
-def bisenetv2_output_shape(num_classes, scale):
-    return ((INPUT_SHAPE[0] // 8) * scale, 
-            (INPUT_SHAPE[1] // 8) * scale, 
+def bisenetv2_output_shape(num_classes, scale, input_shape=INPUT_SHAPE):
+    return ((input_shape[0] // 8) * scale, 
+            (input_shape[1] // 8) * scale, 
             num_classes)
