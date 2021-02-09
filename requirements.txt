@@ -1,0 +1,4 @@
+tensorflow==2.4.0
+tensorflow-datasets==4.2.0
+opencv-python==4.2.0.34
+numpy==1.19.4
