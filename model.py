@@ -77,10 +77,7 @@ def context_embedding(x_in, c):
     x = layers.Conv2D(filters=c, kernel_size=(1,1), padding='same')(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-    
-    # broadcast
-    #x = tf.broadcast_to(x, tf.shape(x_in))
-    x = layers.UpSampling2D(x_in.shape[1:3])(x) # (16,32)
+    # broadcasting no needed
     
     x = layers.Add()([x, x_in])
     x = layers.Conv2D(filters=c, kernel_size=(3,3), padding='same')(x)
