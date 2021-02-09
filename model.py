@@ -195,11 +195,20 @@ def bisenetv2(num_classes=2, out_scale=8, input_shape=INPUT_SHAPE, l=4, seghead_
     return model
 
 
-def bisenetv2_compiled(num_classes, **kwargs):
+def bisenetv2_compiled(num_classes, decay_steps=10e3, **kwargs):
     model = bisenetv2(num_classes, **kwargs)
 
-    model.compile(optimizers.SGD(momentum=0.9), 
-                  loss=losses.CategoricalCrossentropy(from_logits=True),
+    sgd = optimizers.SGD(
+        learning_rate=optimizers.schedules.PolynomialDecay(
+            initial_learning_rate=5e-2,
+            decay_steps=decay_steps,
+            power=0.9),
+        momentum=0.9
+    )
+
+    cce = losses.CategoricalCrossentropy(from_logits=True)
+
+    model.compile(sgd, loss=cce,
                   metrics=['accuracy', ArgmaxMeanIOU(num_classes)]) 
     
     return model
