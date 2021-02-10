@@ -66,7 +66,10 @@ def labelme_prep(output_shape, input_shape, float_range=True):
 
 
 def uwula_prep(output_shape, input_shape, float_range=True):
-    road_color = (32,224,224)
+    color_map = tf.constant([
+        (0,0,0), # background
+        (32,224,224) # road
+    ], dtype=tf.uint8)
 
     def uwula_map(jpeg_filename):
         jpeg_contents = tf.io.read_file(jpeg_filename)
@@ -81,10 +84,13 @@ def uwula_prep(output_shape, input_shape, float_range=True):
         seg = tf.io.decode_png(seg_contents, channels=3)
         seg = tf.image.resize(seg, output_shape[0:2], method='nearest')
 
-        seg_i = tf.math.reduce_sum(seg, axis=-1)
-        seg_i = tf.expand_dims(seg_i, axis=-1)
-        seg_i = tf.where(seg_i > 0, [0.0, 1.0], [1.0, 0.0])
+        class_map = tf.map_fn(
+            lambda color: tf.reduce_all(tf.equal(seg, color), axis=-1),
+            color_map, fn_output_signature=tf.bool)
 
-        return img, seg_i
+        class_map = tf.transpose(class_map, perm=(1,2,0))
+        class_map = tf.cast(class_map, tf.float32)
+
+        return img, class_map
 
     return uwula_map
