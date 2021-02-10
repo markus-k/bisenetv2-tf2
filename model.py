@@ -195,16 +195,30 @@ def bisenetv2(num_classes=2, out_scale=8, input_shape=INPUT_SHAPE, l=4, seghead_
     return model
 
 
-def bisenetv2_compiled(num_classes, decay_steps=10e3, **kwargs):
+def bisenetv2_compiled(num_classes, decay_steps=10e3, momentum=0.9, weight_decay=0.0005, **kwargs):
     model = bisenetv2(num_classes, **kwargs)
 
-    sgd = optimizers.SGD(
-        learning_rate=optimizers.schedules.PolynomialDecay(
-            initial_learning_rate=5e-2,
-            decay_steps=decay_steps,
-            power=0.9),
-        momentum=0.9
+    schedule = optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=5e-2,
+        decay_steps=decay_steps,
+        power=0.9
     )
+
+    try:
+        import tensorflow_addons as tfa
+
+        sgd = tfa.optimizers.SGDW(
+            weight_decay=weight_decay,
+            learning_rate=schedule,
+            momentum=momentum,
+        )
+    except ImportError:
+        print('tensorflow_addons not available, not using weight-decay')
+
+        sgd = optimizers.SGD(
+            learning_rate=schedule,
+            momentum=momentum,
+        )
 
     cce = losses.CategoricalCrossentropy(from_logits=True)
 
