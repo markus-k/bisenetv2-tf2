@@ -51,7 +51,7 @@ first = True
 
 for i in range(COUNT+1):
     shape = (1, *INPUT_SHAPE)
-    input_data = np.zeros(shape, dtype=np.uint8)
+    input_data = np.zeros(shape, dtype=input_details[0]['dtype'])
 
     s1 = time.time()
     interpreter.set_tensor(input_details[0]['index'], input_data)
