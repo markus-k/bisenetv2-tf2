@@ -3,6 +3,7 @@
 import time
 import argparse
 import os
+import statistics
 
 import tensorflow as tf
 import tflite_runtime.interpreter as tflite
@@ -67,4 +68,4 @@ for i in range(COUNT+1):
 
 invoke_avg = sum(times) / len(times)
 print(f'Average: {invoke_avg:.3f}s ({1/invoke_avg:.2f} fps)')
-
+print(f'min/max/stdev: {min(times):.03f}/{max(times):.03f}/{statistics.stdev(times):.03f}')
