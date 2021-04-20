@@ -17,12 +17,17 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 parser = argparse.ArgumentParser(description='EdgeTPU BiSeNetV2 benchmark')
 parser.add_argument('model', help='Model path')
 parser.add_argument('--device', default='usb', choices=['usb', 'pci', 'cpu'], help='Device to run model on')
+parser.add_argument('--device-id', default=None, type=int, help='Device index to use')
 parser.add_argument('--count', type=int, default=10, help='Number of invokations')
 
 args = parser.parse_args()
 
 DEVICE = args.device
+DEVICE_ID = args.device_id
 USE_EDGETPU = (DEVICE != 'cpu')
+
+if DEVICE_ID:
+    DEVICE = f'{DEVICE}:{DEVICE_ID}'
 
 model_path = args.model
 
@@ -32,7 +37,7 @@ if USE_EDGETPU:
     interpreter = tflite.Interpreter(model_path,
       experimental_delegates=[tflite.load_delegate('libedgetpu.so.1', options={'device': DEVICE})])
 else:
-    interpreter = tflite.Interpreter(model_path)
+    interpreter = tflite.Interpreter(model_path, num_threads=os.cpu_count())
 
 interpreter.allocate_tensors()
 
