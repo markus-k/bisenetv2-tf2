@@ -26,8 +26,10 @@ DEVICE = args.device
 DEVICE_ID = args.device_id
 USE_EDGETPU = (DEVICE != 'cpu')
 
-if DEVICE_ID:
+if DEVICE_ID is not None:
     DEVICE = f'{DEVICE}:{DEVICE_ID}'
+
+print(f'Using device: {DEVICE}')
 
 model_path = args.model
 
