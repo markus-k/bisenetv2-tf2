@@ -27,7 +27,7 @@ def ge_layer(x_in, c, e=6, stride=1):
     else:
         y = x_in
         
-    x = layers.DepthwiseConv2D(depth_multiplier=e, kernel_size=(3,3), padding='same')(x)
+    x = layers.DepthwiseConv2D(kernel_size=(3,3), padding='same')(x)
     x = layers.BatchNormalization()(x)
     x = layers.Conv2D(filters=c, kernel_size=(1,1), padding='same')(x)
     x = layers.BatchNormalization()(x)
