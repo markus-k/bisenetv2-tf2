@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+# uncomment this if you are not on macOS
+#tensorflow = "~=2.10"
+tensorflow-macos = "~=2.10"
+tensorflow-datasets = "~=4.2"
+opencv-python = "~=4.4"
+matplotlib = "~=3.6.2"
+pillow = "~=9.3"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
